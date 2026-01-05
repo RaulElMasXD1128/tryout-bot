@@ -1,4 +1,3 @@
-console.log("TOKEN cargado:", !!process.env.TOKEN);
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require("discord.js");
 
 const client = new Client({
@@ -95,3 +94,4 @@ client.on("messageCreate", async (message) => {
 
 
 client.login(process.env.TOKEN);
+
