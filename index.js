@@ -24,33 +24,42 @@ client.on("messageCreate", async (message) => {
   if (!autorizado)
     return message.reply("❌ No tienes permisos para evaluar.");
 
-  const args = message.content.slice(1).split(" ");
-  const member = message.mentions.members.first();
-  if (!member) return message.reply("❌ Menciona a un jugador");
+  const args = message.content.trim().split(/\s+/);
 
-  let rolesNombres = [];
-  let i = 0;
-
-  while (i < args.length) {
-    if (args[i].toLowerCase() === "phase" && args[i + 1]) {
-      rolesNombres.push(`phase ${args[i + 1]}`);
-      i += 2;
-    } else {
-      if (!args[i].startsWith("<@")) rolesNombres.push(args[i]);
-      i++;
-    }
+  // >phase 5 low weak @user [nota...]
+  if (args.length < 5) {
+    return message.reply(
+      "❌ Uso correcto:\n`>phase (0–5) (low|mid|high) (weak|stable|strong) @usuario [nota opcional]`"
+    );
   }
 
-  const yaTiene = rolesNombres.every(nombre =>
-    member.roles.cache.some(r => r.name.toLowerCase() === nombre.toLowerCase())
-  );
+  const fase = args[1];
+  const tier = args[2]?.toLowerCase();
+  const state = args[3]?.toLowerCase();
+  const member = message.mentions.members.first();
 
-  if (yaTiene)
-    return message.reply(`${member} Ya tiene esa combinación de roles.`);
+  const fasesValidas = ["0", "1", "2", "3", "4", "5"];
+  const tierRoles = ["low", "mid", "high"];
+  const stateRoles = ["weak", "stable", "strong"];
+
+  if (!fasesValidas.includes(fase) ||
+      !tierRoles.includes(tier) ||
+      !stateRoles.includes(state) ||
+      !member) {
+    return message.reply(
+      "❌ Uso correcto:\n`>phase (0–5) (low|mid|high) (weak|stable|strong) @usuario [nota opcional]`"
+    );
+  }
+
+  // Nota opcional (todo después de la mención)
+  const mentionIndex = args.findIndex(a => a.includes("<@"));
+  const nota = mentionIndex !== -1
+    ? args.slice(mentionIndex + 1).join(" ")
+    : null;
+
+  const rolesNombres = [`phase ${fase}`, tier, state];
 
   const phaseRegex = /^phase\s\d$/i;
-  const tierRoles = ["low", "mid", "strong"];
-  const stateRoles = ["weak", "stable", "high"];
 
   const rolesAEliminar = member.roles.cache.filter(r =>
     phaseRegex.test(r.name) ||
@@ -89,9 +98,14 @@ client.on("messageCreate", async (message) => {
       iconURL: message.author.displayAvatarURL()
     });
 
+  if (nota) {
+    embed.addFields({
+      name: "📝 Nota del tryouter",
+      value: nota
+    });
+  }
+
   message.reply({ embeds: [embed] });
 });
 
-
 client.login(process.env.TOKEN);
-
